@@ -1,0 +1,23 @@
+# Example scenes for a living room zone.
+# Add these to your scenes.yaml (or via Settings -> Scenes in the UI).
+
+- id: 'living_room_evening'
+  name: Living room evening
+  entities:
+    light.living_room_lamp:
+      state: 'on'
+      brightness_pct: 40
+
+- id: 'living_room_night'
+  name: Living room night
+  entities:
+    light.living_room_lamp:
+      state: 'on'
+      brightness_pct: 1
+
+- id: 'living_room_dim'
+  name: Living room dim
+  entities:
+    light.living_room_lamp:
+      state: 'on'
+      brightness_pct: 15
