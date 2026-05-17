@@ -140,6 +140,10 @@ triggers:
   entity_id: !input zone_lights
   to: 'on'
   id: light_on
+- trigger: numeric_state
+  entity_id: !input illuminance_sensor
+  above: !input illuminance_threshold
+  id: became_bright
 - trigger: time
   at: '00:00:00'
   id: reset
@@ -210,10 +214,12 @@ actions:
           data:
             transition: !input fade_time
 
-  # Presence OFF — only act if not in manual override
+  # Presence OFF — only act if not in manual override and lights are on
   - conditions:
     - condition: trigger
       id: presence_off
+    - condition: template
+      value_template: "{{ expand(zone_lights_var) | selectattr('state', 'eq', 'on') | list | count > 0 }}"
     - condition: template
       value_template: "{{ manual_override_var == {} or is_state(manual_override_var, 'off') }}"
     sequence:
@@ -275,6 +281,19 @@ actions:
     - action: input_boolean.turn_on
       target:
         entity_id: "{{ manual_override_var }}"
+
+  # Outdoor lux rose above threshold — turn off lights
+  - conditions:
+    - condition: trigger
+      id: became_bright
+    - condition: template
+      value_template: "{{ manual_override_var == {} or is_state(manual_override_var, 'off') }}"
+    sequence:
+    - action: light.turn_off
+      target:
+        entity_id: !input zone_lights
+      data:
+        transition: !input fade_time
 
   # Midnight and noon — clear override
   - conditions:
