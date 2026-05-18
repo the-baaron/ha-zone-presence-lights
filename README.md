@@ -9,11 +9,12 @@ A Home Assistant blueprint for presence-based light control with lux-based darkn
 ## Features
 
 - **Lux-based activation** — uses an illuminance sensor instead of sunset/sunrise, so it adapts to overcast days and indoor light levels
+- **Activates in both directions** — turns on when presence is detected in the dark, and also when it gets dark while you're already in the room
 - **Two time windows** — evening scene (05:00–00:00) and night scene (00:00–05:00)
 - **Two-phase timeout** — when presence is lost: wait → dim scene → wait → off
 - **Presence resumes from dim** — any presence during the dim phase reactivates the full scene and resets the timer
 - **Night mode** — immediate off after midnight, no delay, no dim phase (avoids pets keeping lights on)
-- **Manual override** — turning lights on or off manually pauses the automation until midnight or noon; no need to disable the automation
+- **Manual override** — turning lights on or off manually pauses the automation until midnight or noon; the state shows clearly as *Forced on* or *Forced off*
 - **One blueprint, any room** — create one automation per zone with its own scenes, sensor, and timing
 
 ---
@@ -22,11 +23,13 @@ A Home Assistant blueprint for presence-based light control with lux-based darkn
 
 ### Helpers
 
-Create one **Toggle** helper per zone in **Settings → Helpers**:
+Create one **Select** helper per zone in **Settings → Helpers**:
 
-| Helper | Example name | Example entity ID |
-|---|---|---|
-| Toggle (input_boolean) | Living room manual override | `input_boolean.living_room_manual_override` |
+| Helper | Example name | Example entity ID | Options |
+|---|---|---|---|
+| Select (input_select) | Living room override | `input_select.living_room_override` | `Auto`, `Forced on`, `Forced off` |
+
+See [`examples/helpers.yaml`](examples/helpers.yaml) for the configuration.yaml snippet.
 
 ### Devices
 
@@ -85,13 +88,19 @@ Presence detected + dark (lux ≤ threshold)
   └── 05:00–00:00 → Evening scene
   └── 00:00–05:00 → Night scene (or nothing if not set)
 
+Lux drops below threshold + presence already active
+  └── Same as above — lights turn on without needing to leave and return
+
+Lux rises above threshold → lights turn off
+
 Presence lost
   └── 05:00–00:00 → wait off-delay → dim scene → wait dim timeout → off
   └── 00:00–05:00 → immediately off
 
 Presence returns during any timer → scene reactivates, timer resets
 
-Manual on or off at any time → automation pauses until 12:00 or 00:00
+Manual on  → Forced on  until 12:00 or 00:00
+Manual off → Forced off until 12:00 or 00:00
 ```
 
 ### Darkness threshold
@@ -116,7 +125,7 @@ All transitions (on and off) use the configured fade time. Set to `0` for instan
 | Night scene | No | — | Scene for 00:00–05:00 |
 | Dim scene | No | — | Scene activated after off-delay expires |
 | Dim timeout | No | 60 min | How long to hold the dim scene |
-| Manual override | No | — | Toggle helper for manual control |
+| Override mode | No | — | Select helper for manual control state |
 | Fade time | No | 60 s | Transition time for all changes |
 | Off delay (evening) | No | 30 min | Wait after presence lost before dimming |
 
