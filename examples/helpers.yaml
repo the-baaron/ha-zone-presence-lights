@@ -1,0 +1,10 @@
+# Add to configuration.yaml
+input_select:
+  living_room_override:
+    name: Living room override
+    options:
+      - Auto
+      - Forced on
+      - Forced off
+    initial: Auto
+    icon: mdi:tune

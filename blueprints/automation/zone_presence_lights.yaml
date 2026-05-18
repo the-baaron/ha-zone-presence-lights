@@ -1,22 +1,23 @@
 blueprint:
   name: Zone Presence Lights
   description: >-
-    Presence-based light control. Uses a lux sensor for darkness detection.
+    Presence-based light automation with lux-based darkness detection.
 
-    When dark (lux ≤ threshold) and lights are off:
-      05:00–00:00 → evening scene on presence.
-      00:00–05:00 → night scene on presence (if set), else nothing.
+    Activation (when override is Auto):
+      Lights turn on when presence is detected and it's dark (lux ≤ threshold),
+      or when lux drops below threshold while presence is already active.
+      Evening scene (05:00–00:00), night scene (00:00–05:00, if configured).
 
-    When lights are already on (returning from dim phase):
-      Presence always reactivates the time-appropriate scene.
+    Timeout — evening only (05:00–00:00):
+      Presence lost → off-delay → dim scene (optional) → dim timeout → off.
+      At night (00:00–05:00): presence lost → immediate off.
 
-    Timeout flow:
-      Evening (05:00–00:00): presence lost → off-delay → dim scene → dim timeout → off.
-      Night (00:00–05:00): presence lost → immediately off. No delay, no dim.
+    Daylight:
+      When lux rises above threshold, lights turn off automatically.
 
     Manual control:
-      Any manual on/off pauses the automation until midnight or noon.
-      Override resets at 00:00 and 12:00.
+      Manual on  → "Forced on"  until 00:00 or 12:00.
+      Manual off → "Forced off" until 00:00 or 12:00.
   domain: automation
   input:
     presence_sensor:
@@ -34,7 +35,7 @@ blueprint:
 
     illuminance_sensor:
       name: Illuminance sensor
-      description: Lux sensor to detect darkness (typically built into the presence sensor).
+      description: Lux sensor for darkness detection (typically built into the presence sensor).
       selector:
         entity:
           domain: sensor
@@ -42,7 +43,7 @@ blueprint:
 
     illuminance_threshold:
       name: Darkness threshold (lux)
-      description: Automation activates when lux is at or below this value and lights are off.
+      description: Lights activate at or below this value.
       default: 50
       selector:
         number:
@@ -52,14 +53,14 @@ blueprint:
 
     evening_scene:
       name: Evening scene
-      description: Scene to activate on presence when dark (05:00–00:00).
+      description: Scene to activate when dark (05:00–00:00).
       selector:
         entity:
           domain: scene
 
     night_scene:
       name: Night scene (optional)
-      description: Scene for 00:00–05:00. If not set, lights stay off during those hours.
+      description: Scene for 00:00–05:00. If not set, lights stay off at night.
       default: {}
       selector:
         entity:
@@ -68,9 +69,9 @@ blueprint:
     dim_scene:
       name: Dim scene (optional)
       description: >-
-        Scene activated after the off-delay expires (evening only).
-        Starts a second countdown before lights fully turn off.
-        If not set, lights turn off directly after the off-delay.
+        Activated after the off-delay (evening only). Starts a second countdown
+        before lights fully turn off. If not set, lights turn off directly after
+        the off-delay.
       default: {}
       selector:
         entity:
@@ -78,7 +79,7 @@ blueprint:
 
     dim_timeout:
       name: Dim timeout (minutes)
-      description: How long to stay in the dim scene before turning off.
+      description: How long to hold the dim scene before turning off.
       default: 60
       selector:
         number:
@@ -86,13 +87,15 @@ blueprint:
           max: 240
           unit_of_measurement: min
 
-    manual_override:
-      name: Manual override (optional)
-      description: Toggle helper — pauses automation when set. Clears at 00:00 and 12:00.
+    override_mode:
+      name: Override mode (optional)
+      description: >-
+        Input select helper with options: Auto, Forced on, Forced off.
+        Set automatically on manual light changes. Resets to Auto at 00:00 and 12:00.
       default: {}
       selector:
         entity:
-          domain: input_boolean
+          domain: input_select
 
     fade_time:
       name: Fade time (seconds)
@@ -118,7 +121,7 @@ variables:
   zone_lights_var: !input zone_lights
   night_scene_var: !input night_scene
   dim_scene_var: !input dim_scene
-  manual_override_var: !input manual_override
+  override_var: !input override_mode
   illuminance_sensor_var: !input illuminance_sensor
   illuminance_threshold_var: !input illuminance_threshold
   normal_off_delay_min: !input normal_off_delay
@@ -144,6 +147,10 @@ triggers:
   entity_id: !input illuminance_sensor
   above: !input illuminance_threshold
   id: became_bright
+- trigger: numeric_state
+  entity_id: !input illuminance_sensor
+  below: !input illuminance_threshold
+  id: became_dark
 - trigger: time
   at: '00:00:00'
   id: reset
@@ -156,14 +163,16 @@ conditions: []
 actions:
 - choose:
 
-  # Presence ON — lights already on (returning from dim phase or resumed)
+  # Presence detected — activate if lights already on (dim phase) or it's dark
   - conditions:
     - condition: trigger
       id: presence_on
     - condition: template
-      value_template: "{{ expand(zone_lights_var) | selectattr('state', 'eq', 'on') | list | count > 0 }}"
+      value_template: >-
+        {{ expand(zone_lights_var) | selectattr('state', 'eq', 'on') | list | count > 0
+           or states(illuminance_sensor_var) | int(0) <= illuminance_threshold_var | int }}
     - condition: template
-      value_template: "{{ manual_override_var == {} or is_state(manual_override_var, 'off') }}"
+      value_template: "{{ override_var == {} or is_state(override_var, 'Auto') }}"
     sequence:
     - choose:
       - conditions:
@@ -185,14 +194,15 @@ actions:
           data:
             transition: !input fade_time
 
-  # Presence ON — lights off, check lux for initial activation
+  # Got dark while presence is already active — activate scene
   - conditions:
     - condition: trigger
-      id: presence_on
+      id: became_dark
+    - condition: state
+      entity_id: !input presence_sensor
+      state: 'on'
     - condition: template
-      value_template: "{{ states(illuminance_sensor_var) | int(0) <= illuminance_threshold_var | int }}"
-    - condition: template
-      value_template: "{{ manual_override_var == {} or is_state(manual_override_var, 'off') }}"
+      value_template: "{{ override_var == {} or is_state(override_var, 'Auto') }}"
     sequence:
     - choose:
       - conditions:
@@ -214,17 +224,17 @@ actions:
           data:
             transition: !input fade_time
 
-  # Presence OFF — only act if not in manual override and lights are on
+  # Presence lost — run off sequence only if lights are on
   - conditions:
     - condition: trigger
       id: presence_off
     - condition: template
       value_template: "{{ expand(zone_lights_var) | selectattr('state', 'eq', 'on') | list | count > 0 }}"
     - condition: template
-      value_template: "{{ manual_override_var == {} or is_state(manual_override_var, 'off') }}"
+      value_template: "{{ override_var == {} or is_state(override_var, 'Auto') }}"
     sequence:
     - choose:
-      # Night (00:00–05:00): immediate off
+      # Night (00:00-05:00): immediate off
       - conditions:
         - condition: template
           value_template: "{{ now().hour < 5 }}"
@@ -234,7 +244,7 @@ actions:
             entity_id: !input zone_lights
           data:
             transition: !input fade_time
-      # Evening (05:00–00:00): delay → optional dim → off
+      # Evening (05:00-00:00): delay then optional dim then off
       default:
       - delay:
           minutes: "{{ normal_off_delay_min | int }}"
@@ -256,38 +266,42 @@ actions:
         data:
           transition: !input fade_time
 
-  # Manual light off → set override
+  # Manual light off → Forced off
   - conditions:
     - condition: trigger
       id: light_off
     - condition: template
-      value_template: "{{ manual_override_var != {} }}"
+      value_template: "{{ override_var != {} }}"
     - condition: template
       value_template: "{{ trigger.to_state.context.user_id is not none }}"
     sequence:
-    - action: input_boolean.turn_on
+    - action: input_select.select_option
       target:
-        entity_id: "{{ manual_override_var }}"
+        entity_id: "{{ override_var }}"
+      data:
+        option: Forced off
 
-  # Manual light on → set override
+  # Manual light on → Forced on
   - conditions:
     - condition: trigger
       id: light_on
     - condition: template
-      value_template: "{{ manual_override_var != {} }}"
+      value_template: "{{ override_var != {} }}"
     - condition: template
       value_template: "{{ trigger.to_state.context.user_id is not none }}"
     sequence:
-    - action: input_boolean.turn_on
+    - action: input_select.select_option
       target:
-        entity_id: "{{ manual_override_var }}"
+        entity_id: "{{ override_var }}"
+      data:
+        option: Forced on
 
-  # Outdoor lux rose above threshold — turn off lights
+  # Lux rose above threshold — turn off lights
   - conditions:
     - condition: trigger
       id: became_bright
     - condition: template
-      value_template: "{{ manual_override_var == {} or is_state(manual_override_var, 'off') }}"
+      value_template: "{{ override_var == {} or is_state(override_var, 'Auto') }}"
     sequence:
     - action: light.turn_off
       target:
@@ -295,15 +309,17 @@ actions:
       data:
         transition: !input fade_time
 
-  # Midnight and noon — clear override
+  # Midnight and noon — reset override to Auto
   - conditions:
     - condition: trigger
       id: reset
     - condition: template
-      value_template: "{{ manual_override_var != {} }}"
+      value_template: "{{ override_var != {} }}"
     sequence:
-    - action: input_boolean.turn_off
+    - action: input_select.select_option
       target:
-        entity_id: "{{ manual_override_var }}"
+        entity_id: "{{ override_var }}"
+      data:
+        option: Auto
 
 mode: restart

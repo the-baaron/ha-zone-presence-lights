@@ -1,22 +1,15 @@
-# Example automation instance using the Zone Presence Lights blueprint.
-# Add this to your automations.yaml.
-#
-# Before adding, create the following in Settings -> Helpers:
-#   - Toggle (input_boolean): e.g. "Living room manual override"
-#
-# Adjust entity IDs, scenes, and thresholds to match your setup.
-
-- id: living_room_zone_presence
+- id: living_room_presence
   alias: Living room presence lights
   use_blueprint:
     path: zone_presence_lights.yaml
     input:
       presence_sensor: binary_sensor.living_room_presence
       zone_lights:
-        - light.living_room_lamp
+        - light.floor_lamp
+        - light.ceiling_light
       illuminance_sensor: sensor.living_room_illuminance
       illuminance_threshold: 50
-      manual_override: input_boolean.living_room_manual_override
+      override_mode: input_select.living_room_override
       evening_scene: scene.living_room_evening
       night_scene: scene.living_room_night
       dim_scene: scene.living_room_dim
