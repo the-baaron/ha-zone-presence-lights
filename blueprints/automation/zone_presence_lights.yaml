@@ -186,7 +186,7 @@ actions:
             transition: !input fade_time
       - conditions:
         - condition: template
-          value_template: "{{ now().hour < 5 and night_scene_var != {} }}"
+          value_template: "{{ now().hour < 6 and night_scene_var != {} }}"
         sequence:
         - action: scene.turn_on
           target:
@@ -216,7 +216,7 @@ actions:
             transition: !input fade_time
       - conditions:
         - condition: template
-          value_template: "{{ now().hour < 5 and night_scene_var != {} }}"
+          value_template: "{{ now().hour < 6 and night_scene_var != {} }}"
         sequence:
         - action: scene.turn_on
           target:
@@ -237,7 +237,7 @@ actions:
       # Night (00:00-05:00): immediate off
       - conditions:
         - condition: template
-          value_template: "{{ now().hour < 5 }}"
+          value_template: "{{ now().hour < 6 }}"
         sequence:
         - action: light.turn_off
           target:
