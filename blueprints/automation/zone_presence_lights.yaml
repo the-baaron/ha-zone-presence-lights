@@ -191,8 +191,6 @@ actions:
         - action: scene.turn_on
           target:
             entity_id: "{{ night_scene_var }}"
-          data:
-            transition: !input fade_time
 
   # Got dark while presence is already active — activate scene
   - conditions:
@@ -221,8 +219,6 @@ actions:
         - action: scene.turn_on
           target:
             entity_id: "{{ night_scene_var }}"
-          data:
-            transition: !input fade_time
 
   # Presence lost — run off sequence only if lights are on
   - conditions:
@@ -242,8 +238,6 @@ actions:
         - action: light.turn_off
           target:
             entity_id: !input zone_lights
-          data:
-            transition: !input fade_time
       # Evening (06:00-00:00): delay then optional dim then off
       default:
       - delay:
