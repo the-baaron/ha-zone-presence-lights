@@ -10,7 +10,7 @@ A Home Assistant blueprint for presence-based light control with lux-based darkn
 
 - **Lux-based activation** — uses an illuminance sensor instead of sunset/sunrise, so it adapts to overcast days and indoor light levels
 - **Activates in both directions** — turns on when presence is detected in the dark, and also when it gets dark while you're already in the room
-- **Two time windows** — evening scene (06:00–00:00) and night scene (00:00–06:00)
+- **Two time windows** — default scene (06:00–00:00) and night scene (00:00–06:00)
 - **Two-phase timeout** — when presence is lost: wait → dim scene → wait → off
 - **Presence resumes from dim** — any presence during the dim phase reactivates the full scene and resets the timer
 - **Night mode** — immediate off after midnight, no delay, no dim phase (avoids pets keeping lights on)
@@ -85,7 +85,7 @@ See [`examples/automations.yaml`](examples/automations.yaml) for a full example.
 
 ```
 Presence detected + dark (lux ≤ threshold)
-  └── 06:00–00:00 → Evening scene
+  └── 06:00–00:00 → Default scene
   └── 00:00–06:00 → Night scene (or nothing if not set)
 
 Lux drops below threshold + presence already active
@@ -121,7 +121,7 @@ All transitions (on and off) use the configured fade time. Set to `0` for instan
 | Zone lights | Yes | — | Light entities to monitor and control |
 | Illuminance sensor | Yes | — | Lux sensor for darkness detection |
 | Darkness threshold | Yes | 50 lx | Activate when lux is at or below this |
-| Evening scene | Yes | — | Scene for 06:00–00:00 |
+| Default scene | Yes | — | Scene for 06:00–00:00 |
 | Night scene | No | — | Scene for 00:00–06:00 |
 | Dim scene | No | — | Scene activated after off-delay expires |
 | Dim timeout | No | 60 min | How long to hold the dim scene |

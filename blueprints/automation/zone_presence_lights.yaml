@@ -6,9 +6,9 @@ blueprint:
     Activation (when override is Auto):
       Lights turn on when presence is detected and it's dark (lux ≤ threshold),
       or when lux drops below threshold while presence is already active.
-      Evening scene (06:00–00:00), night scene (00:00–06:00, if configured).
+      Default scene (06:00–00:00), night scene (00:00–06:00, if configured).
 
-    Timeout — evening only (06:00–00:00):
+    Timeout — default (06:00–00:00):
       Presence lost → off-delay → dim scene (optional) → dim timeout → off.
       At night (00:00–06:00): presence lost → immediate off.
 
@@ -51,8 +51,8 @@ blueprint:
           max: 100
           unit_of_measurement: lx
 
-    evening_scene:
-      name: Evening scene
+    default_scene:
+      name: Default scene
       description: Scene to activate when dark (06:00–00:00).
       selector:
         entity:
@@ -69,7 +69,7 @@ blueprint:
     dim_scene:
       name: Dim scene (optional)
       description: >-
-        Activated after the off-delay (evening only). Starts a second countdown
+        Activated after the off-delay (default hours only). Starts a second countdown
         before lights fully turn off. If not set, lights turn off directly after
         the off-delay.
       default: {}
@@ -108,7 +108,7 @@ blueprint:
           unit_of_measurement: s
 
     normal_off_delay:
-      name: Off delay — evening (minutes)
+      name: Off delay — default (minutes)
       description: Wait time after presence is lost before dimming/off (06:00–00:00).
       default: 30
       selector:
@@ -181,7 +181,7 @@ actions:
         sequence:
         - action: scene.turn_on
           target:
-            entity_id: !input evening_scene
+            entity_id: !input default_scene
           data:
             transition: !input fade_time
       - conditions:
@@ -209,7 +209,7 @@ actions:
         sequence:
         - action: scene.turn_on
           target:
-            entity_id: !input evening_scene
+            entity_id: !input default_scene
           data:
             transition: !input fade_time
       - conditions:
@@ -238,7 +238,7 @@ actions:
         - action: light.turn_off
           target:
             entity_id: !input zone_lights
-      # Evening (06:00-00:00): delay then optional dim then off
+      # Default (06:00-00:00): delay then optional dim then off
       default:
       - delay:
           minutes: "{{ normal_off_delay_min | int }}"

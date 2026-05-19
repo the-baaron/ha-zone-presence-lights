@@ -10,7 +10,7 @@
       illuminance_sensor: sensor.living_room_illuminance
       illuminance_threshold: 50
       override_mode: input_select.living_room_override
-      evening_scene: scene.living_room_evening
+      default_scene: scene.living_room_default
       night_scene: scene.living_room_night
       dim_scene: scene.living_room_dim
       dim_timeout: 60
