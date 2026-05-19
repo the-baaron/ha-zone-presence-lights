@@ -177,7 +177,7 @@ actions:
     - choose:
       - conditions:
         - condition: template
-          value_template: "{{ now().hour >= 5 }}"
+          value_template: "{{ now().hour >= 6 }}"
         sequence:
         - action: scene.turn_on
           target:
@@ -207,7 +207,7 @@ actions:
     - choose:
       - conditions:
         - condition: template
-          value_template: "{{ now().hour >= 5 }}"
+          value_template: "{{ now().hour >= 6 }}"
         sequence:
         - action: scene.turn_on
           target:
