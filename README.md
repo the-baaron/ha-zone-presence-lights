@@ -1,6 +1,6 @@
 # Zone Presence Lights
 
-A Home Assistant blueprint for presence-based light control with lux-based darkness detection, a two-phase timeout, and manual override support.
+A Home Assistant blueprint that turns lights on when presence is detected and it's dark, and off when you leave. Uses a lux sensor instead of sunset/sunrise — works on overcast days and responds to indoor light changes.
 
 [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fthe-baaron%2Fha-zone-presence-lights%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fzone_presence_lights.yaml)
 
@@ -8,14 +8,13 @@ A Home Assistant blueprint for presence-based light control with lux-based darkn
 
 ## Features
 
-- **Lux-based activation** — uses an illuminance sensor instead of sunset/sunrise, so it adapts to overcast days and indoor light levels
-- **Activates in both directions** — turns on when presence is detected in the dark, and also when it gets dark while you're already in the room
-- **Two time windows** — default scene (06:00–00:00) and night scene (00:00–06:00)
-- **Two-phase timeout** — when presence is lost: wait → dim scene → wait → off
-- **Presence resumes from dim** — any presence during the dim phase reactivates the full scene and resets the timer
-- **Night mode** — immediate off after midnight, no delay, no dim phase (avoids pets keeping lights on)
-- **Manual override** — turning lights on or off manually pauses the automation until midnight or noon; the state shows clearly as *Forced on* or *Forced off*
-- **One blueprint, any room** — create one automation per zone with its own scenes, sensor, and timing
+- **Lux-based activation** — works with any illuminance sensor, indoor or outdoor
+- **Activates in both directions** — turns on when you enter a dark room, and also when it gets dark while you're already there
+- **Two time windows** — default mode (06:00–00:00) with delays and fading; night mode (00:00–06:00) with instant on/off and no timers
+- **Two-phase timeout** — presence lost → off-delay → dim scene → dim timeout → off
+- **Presence resumes from dim** — returning during the dim phase reactivates the full scene and resets the timer
+- **Manual override** — manually turning lights on or off sets *Forced on* or *Forced off* until midnight or noon
+- **One blueprint, any room** — each automation instance has its own sensor, scenes, and timing
 
 ---
 
@@ -25,27 +24,25 @@ A Home Assistant blueprint for presence-based light control with lux-based darkn
 
 Create one **Select** helper per zone in **Settings → Helpers**:
 
-| Helper | Example name | Example entity ID | Options |
-|---|---|---|---|
-| Select (input_select) | Living room override | `input_select.living_room_override` | `Auto`, `Forced on`, `Forced off` |
+| Helper type | Options |
+|---|---|
+| Select (`input_select`) | `Auto`, `Forced on`, `Forced off` |
 
-See [`examples/helpers.yaml`](examples/helpers.yaml) for the configuration.yaml snippet.
+See [`examples/helpers.yaml`](examples/helpers.yaml) for the `configuration.yaml` snippet.
 
 ### Devices
 
-- A **presence sensor** (binary_sensor)
-- An **illuminance sensor** (lux) — many presence sensors include one
+- A **presence sensor** (`binary_sensor`)
+- An **illuminance sensor** — many presence sensors include one; an outdoor sensor also works
 - One or more **lights**
 
 ### Scenes
 
-Create scenes for each zone in **Settings → Scenes** or in `scenes.yaml`. You need:
-
 | Scene | Purpose | Suggested brightness |
 |---|---|---|
-| Evening | Active presence, evening hours | 30–60% |
-| Night *(optional)* | Active presence, after midnight | 1–5% |
-| Dim *(optional)* | Fading out after no presence | 10–20% |
+| Default | Active presence, 06:00–00:00 | 30–60% |
+| Night *(optional)* | Active presence, 00:00–06:00 | 1–5% |
+| Dim *(optional)* | Fading out after presence is lost | 10–20% |
 
 See [`examples/scenes.yaml`](examples/scenes.yaml) for a starting point.
 
@@ -53,28 +50,27 @@ See [`examples/scenes.yaml`](examples/scenes.yaml) for a starting point.
 
 ## Installation
 
-### Via HACS (recommended)
+### Via HACS
 
-1. Open HACS in your Home Assistant instance
-2. Go to **Automations** → click the three dots → **Custom repositories**
-3. Add `the-baaron/ha-zone-presence-lights` with category **Blueprint**
-4. Find **Zone Presence Lights** and download it
+1. Go to **HACS → Automations** → three dots → **Custom repositories**
+2. Add `the-baaron/ha-zone-presence-lights` with category **Blueprint**
+3. Download **Zone Presence Lights**
 
 ### Manual
 
-1. Copy [`blueprints/automation/zone_presence_lights.yaml`](blueprints/automation/zone_presence_lights.yaml) into your HA config at:
-   ```
-   config/blueprints/automation/zone_presence_lights.yaml
-   ```
-2. Reload blueprints in **Developer Tools → YAML → Blueprints**
+Copy [`blueprints/automation/zone_presence_lights.yaml`](blueprints/automation/zone_presence_lights.yaml) into:
+```
+config/blueprints/automation/zone_presence_lights.yaml
+```
+Then reload blueprints in **Developer Tools → YAML → Blueprints**.
 
 ---
 
 ## Setup
 
-1. Create the required helper (see above)
+1. Create the select helper (see above)
 2. Create your scenes
-3. Go to **Settings → Automations → Create automation → Use a blueprint**
+3. Go to **Settings → Automations → New automation → Use a blueprint**
 4. Select **Zone Presence Lights** and fill in the inputs
 
 See [`examples/automations.yaml`](examples/automations.yaml) for a full example.
@@ -85,49 +81,49 @@ See [`examples/automations.yaml`](examples/automations.yaml) for a full example.
 
 ```
 Presence detected + dark (lux ≤ threshold)
-  └── 06:00–00:00 → Default scene
-  └── 00:00–06:00 → Night scene (or nothing if not set)
+  └── 06:00–00:00 → Default scene (with fade)
+  └── 00:00–06:00 → Night scene, or nothing if not configured
 
-Lux drops below threshold + presence already active
-  └── Same as above — lights turn on without needing to leave and return
+Lux drops below threshold while presence is already active
+  └── Same activation as above
 
 Lux rises above threshold → lights turn off
 
-Presence lost
-  └── 06:00–00:00 → wait off-delay → dim scene → wait dim timeout → off
-  └── 00:00–06:00 → immediately off
+Presence lost + lights on
+  └── 06:00–00:00 → wait off-delay → dim scene (optional) → wait dim timeout → off
+  └── 00:00–06:00 → immediately off, no delay
 
-Presence returns during any timer → scene reactivates, timer resets
+Presence returns during off-delay or dim phase → full scene reactivates, timer resets
 
-Manual on  → Forced on  until 12:00 or 00:00
-Manual off → Forced off until 12:00 or 00:00
+Manual on  → Forced on  — automation paused until 12:00 or 00:00
+Manual off → Forced off — automation paused until 12:00 or 00:00
 ```
 
 ### Darkness threshold
 
-The lux threshold determines when the automation activates. A good starting point is **50 lx** — roughly the light level indoors at dusk. Adjust based on your sensor placement and preference.
+Tip: check your sensor's current value in **Developer Tools → States** before setting this. Indoor sensors typically read 5–50 lx at dusk; outdoor sensors 100–1,000 lx.
 
-### Fade time
+### Night mode
 
-All transitions (on and off) use the configured fade time. Set to `0` for instant changes.
+No fade, no delays. Lights snap on the moment presence is detected and off the moment it's gone. Useful for avoiding long timeouts from pets.
 
 ---
 
 ## Blueprint inputs
 
-| Input | Required | Default | Description |
-|---|---|---|---|
-| Presence sensor | Yes | — | binary_sensor detecting occupancy |
-| Zone lights | Yes | — | Light entities to monitor and control |
-| Illuminance sensor | Yes | — | Lux sensor for darkness detection |
-| Darkness threshold | Yes | 50 lx | Activate when lux is at or below this |
-| Default scene | Yes | — | Scene for 06:00–00:00 |
-| Night scene | No | — | Scene for 00:00–06:00 |
-| Dim scene | No | — | Scene activated after off-delay expires |
-| Dim timeout | No | 60 min | How long to hold the dim scene |
-| Override mode | No | — | Select helper for manual control state |
-| Fade time | No | 60 s | Transition time for all changes |
-| Off delay (evening) | No | 30 min | Wait after presence lost before dimming |
+| Section | Input | Required | Default | Description |
+|---|---|---|---|---|
+| Zone | Presence sensor | Yes | — | `binary_sensor` detecting occupancy |
+| Zone | Lights | Yes | — | Light entities to control |
+| Light level | Brightness sensor | Yes | — | Illuminance sensor (indoor or outdoor) |
+| Light level | Darkness threshold | Yes | 50 lx | Lights activate at or below this value |
+| Scenes | Default scene | Yes | — | Scene for 06:00–00:00 |
+| Scenes | Night scene | No | — | Scene for 00:00–06:00 |
+| Scenes | Dim scene | No | — | Scene activated after off-delay expires |
+| Timing | Fade time | No | 60 s | Transition duration (06:00–00:00 only) |
+| Timing | Off delay | No | 30 min | Wait after presence lost before dimming/off |
+| Timing | Dim timeout | No | 60 min | How long to hold the dim scene |
+| Override | Override helper | No | — | `input_select` for manual control state |
 
 ---
 
