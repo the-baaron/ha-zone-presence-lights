@@ -45,6 +45,7 @@ blueprint:
             number:
               min: 1
               max: 10000
+              mode: box
               unit_of_measurement: lx
 
     section_scenes:
