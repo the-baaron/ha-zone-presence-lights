@@ -1,121 +1,127 @@
 blueprint:
   name: Zone Presence Lights
   description: >-
-    Presence-based light automation with lux-based darkness detection.
+    Turns lights on when presence is detected and it's dark, off when you leave.
+    Uses a lux sensor instead of sunset/sunrise — works on cloudy days and indoors.
 
-    Activation (when override is Auto):
-      Lights turn on when presence is detected and it's dark (lux ≤ threshold),
-      or when lux drops below threshold while presence is already active.
-      Default scene (06:00–00:00), night scene (00:00–06:00, if configured).
+    Night mode (00:00–06:00): lights snap on/off instantly, no delays.
+    Default mode (06:00–00:00): configurable off-delay and optional dim phase.
 
-    Timeout — default (06:00–00:00):
-      Presence lost → off-delay → dim scene (optional) → dim timeout → off.
-      At night (00:00–06:00): presence lost → immediate off.
-
-    Daylight:
-      When lux rises above threshold, lights turn off automatically.
-
-    Manual control:
-      Manual on  → "Forced on"  until 00:00 or 12:00.
-      Manual off → "Forced off" until 00:00 or 12:00.
+    Manual on/off sets "Forced on" or "Forced off" until 00:00 or 12:00.
   domain: automation
   input:
-    presence_sensor:
-      name: Presence sensor
-      selector:
-        entity:
-          domain: binary_sensor
+    section_zone:
+      name: Zone
+      input:
+        presence_sensor:
+          name: Presence sensor
+          selector:
+            entity:
+              domain: binary_sensor
 
-    zone_lights:
-      name: Zone lights
-      selector:
-        entity:
-          domain: light
-          multiple: true
+        zone_lights:
+          name: Lights
+          selector:
+            entity:
+              domain: light
+              multiple: true
 
-    illuminance_sensor:
-      name: Illuminance sensor
-      description: Lux sensor for darkness detection (typically built into the presence sensor).
-      selector:
-        entity:
-          domain: sensor
-          device_class: illuminance
+    section_light_level:
+      name: Light level
+      input:
+        illuminance_sensor:
+          name: Brightness sensor
+          description: Works with both indoor (presence sensor built-in) and outdoor lux sensors.
+          selector:
+            entity:
+              domain: sensor
+              device_class: illuminance
 
-    illuminance_threshold:
-      name: Darkness threshold (lux)
-      description: Lights activate at or below this value.
-      default: 50
-      selector:
-        number:
-          min: 1
-          max: 100
-          unit_of_measurement: lx
+        illuminance_threshold:
+          name: Darkness threshold (lux)
+          description: Lights activate when lux is at or below this value.
+          default: 50
+          selector:
+            number:
+              min: 1
+              max: 10000
+              unit_of_measurement: lx
 
-    default_scene:
-      name: Default scene
-      description: Scene to activate when dark (06:00–00:00).
-      selector:
-        entity:
-          domain: scene
+    section_scenes:
+      name: Scenes
+      input:
+        default_scene:
+          name: Default scene
+          description: Activated when dark (06:00–00:00).
+          selector:
+            entity:
+              domain: scene
 
-    night_scene:
-      name: Night scene (optional)
-      description: Scene for 00:00–06:00. If not set, lights stay off at night.
-      default: {}
-      selector:
-        entity:
-          domain: scene
+        night_scene:
+          name: Night scene
+          description: Activated when dark (00:00–06:00). Leave empty to keep lights off at night.
+          default: {}
+          selector:
+            entity:
+              domain: scene
 
-    dim_scene:
-      name: Dim scene (optional)
-      description: >-
-        Activated after the off-delay (default hours only). Starts a second countdown
-        before lights fully turn off. If not set, lights turn off directly after
-        the off-delay.
-      default: {}
-      selector:
-        entity:
-          domain: scene
+        dim_scene:
+          name: Dim scene
+          description: >-
+            Optional. Activated after the off-delay expires — dims the lights
+            before turning them off fully. Only applies during 06:00–00:00.
+          default: {}
+          selector:
+            entity:
+              domain: scene
 
-    dim_timeout:
-      name: Dim timeout (minutes)
-      description: How long to hold the dim scene before turning off.
-      default: 60
-      selector:
-        number:
-          min: 1
-          max: 240
-          unit_of_measurement: min
+    section_timing:
+      name: Timing
+      input:
+        fade_time:
+          name: Fade time (seconds)
+          description: Transition duration for all light changes during 06:00–00:00. Night mode always snaps instantly.
+          default: 60
+          selector:
+            number:
+              min: 0
+              max: 3600
+              unit_of_measurement: s
 
-    override_mode:
-      name: Override mode (optional)
-      description: >-
-        Input select helper with options: Auto, Forced on, Forced off.
-        Set automatically on manual light changes. Resets to Auto at 00:00 and 12:00.
-      default: {}
-      selector:
-        entity:
-          domain: input_select
+        normal_off_delay:
+          name: Off delay (minutes)
+          description: How long to wait after presence is lost before dimming or turning off (06:00–00:00).
+          default: 30
+          selector:
+            number:
+              min: 1
+              max: 120
+              unit_of_measurement: min
 
-    fade_time:
-      name: Fade time (seconds)
-      description: Transition time for all light changes.
-      default: 60
-      selector:
-        number:
-          min: 0
-          max: 3600
-          unit_of_measurement: s
+        dim_timeout:
+          name: Dim timeout (minutes)
+          description: How long to hold the dim scene before turning off fully. Only used when a dim scene is set.
+          default: 60
+          selector:
+            number:
+              min: 1
+              max: 240
+              unit_of_measurement: min
 
-    normal_off_delay:
-      name: Off delay — default (minutes)
-      description: Wait time after presence is lost before dimming/off (06:00–00:00).
-      default: 30
-      selector:
-        number:
-          min: 1
-          max: 120
-          unit_of_measurement: min
+    section_override:
+      name: Manual override
+      collapsed: true
+      input:
+        override_mode:
+          name: Override helper
+          description: >-
+            Optional. An input_select helper with options: Auto, Forced on, Forced off.
+            Set automatically when you manually control the lights.
+            Resets to Auto at 00:00 and 12:00.
+          default: {}
+          selector:
+            entity:
+              domain: input_select
 
 variables:
   zone_lights_var: !input zone_lights
