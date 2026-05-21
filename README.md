@@ -8,7 +8,7 @@ A collection of Home Assistant blueprints for presence-based lighting and automa
 
 ### Zone Presence Lights
 
-[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fthe-baaron%2Fha-zone-presence-lights%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fzone_presence_lights.yaml)
+[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fthe-baaron%2Fha-blueprints%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fzone_presence_lights.yaml)
 
 Turns lights on when presence is detected and it's dark, off when you leave. Uses a lux sensor instead of sunset/sunrise — works on overcast days and responds to indoor light changes.
 
@@ -26,7 +26,7 @@ Turns lights on when presence is detected and it's dark, off when you leave. Use
 
 ### Door Light
 
-[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fthe-baaron%2Fha-zone-presence-lights%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fdoor_light.yaml)
+[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fthe-baaron%2Fha-blueprints%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fdoor_light.yaml)
 
 Simple contact sensor → light blueprint. Light turns on when the door/window opens, off when it closes.
 
@@ -34,7 +34,7 @@ Simple contact sensor → light blueprint. Light turns on when the door/window o
 
 ### Low Battery Alert
 
-[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fthe-baaron%2Fha-zone-presence-lights%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Flow_battery_alert.yaml)
+[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fthe-baaron%2Fha-blueprints%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Flow_battery_alert.yaml)
 
 Sends a notification when a battery sensor drops below a configurable threshold. Works with any `battery` device class sensor.
 
@@ -42,7 +42,7 @@ Sends a notification when a battery sensor drops below a configurable threshold.
 
 ### Adaptive Brightness
 
-[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fthe-baaron%2Fha-zone-presence-lights%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fadaptive_brightness.yaml)
+[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fthe-baaron%2Fha-blueprints%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fadaptive_brightness.yaml)
 
 Applies a scene based on the time of day whenever a light turns on. Supports up to four configurable time windows (morning, afternoon, evening, night) — all optional.
 
@@ -50,7 +50,7 @@ Applies a scene based on the time of day whenever a light turns on. Supports up 
 
 ### Away Mode
 
-[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fthe-baaron%2Fha-zone-presence-lights%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Faway_mode.yaml)
+[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fthe-baaron%2Fha-blueprints%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Faway_mode.yaml)
 
 Tracks multiple presence sensors. Triggers an away scene when all sensors have been off for a configurable delay, and a home scene the moment any sensor activates.
 
@@ -61,7 +61,7 @@ Tracks multiple presence sensors. Triggers an away scene when all sensors have b
 ### Via HACS
 
 1. Go to **HACS → Automations** → three dots → **Custom repositories**
-2. Add `the-baaron/ha-zone-presence-lights` with category **Blueprint**
+2. Add `the-baaron/ha-blueprints` with category **Blueprint**
 3. Download the blueprint(s) you want
 
 ### Manual
