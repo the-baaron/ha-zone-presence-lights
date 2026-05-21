@@ -81,12 +81,22 @@ blueprint:
       input:
         fade_time:
           name: Fade time (seconds)
-          description: Transition duration for all light changes during 06:00–00:00. Night mode always snaps instantly.
+          description: Transition duration for light changes during 06:00–00:00.
           default: 60
           selector:
             number:
               min: 0
               max: 3600
+              unit_of_measurement: s
+
+        night_fade_time:
+          name: Night fade time (seconds)
+          description: Transition duration for light changes during 00:00–06:00. Set to 0 for instant.
+          default: 0
+          selector:
+            number:
+              min: 0
+              max: 60
               unit_of_measurement: s
 
         normal_off_delay:
@@ -132,6 +142,7 @@ variables:
   illuminance_sensor_var: !input illuminance_sensor
   illuminance_threshold_var: !input illuminance_threshold
   normal_off_delay_min: !input normal_off_delay
+  night_fade_time_var: !input night_fade_time
 
 triggers:
 - trigger: state
@@ -198,6 +209,8 @@ actions:
         - action: scene.turn_on
           target:
             entity_id: "{{ night_scene_var }}"
+          data:
+            transition: "{{ night_fade_time_var }}"
 
   # Got dark while presence is already active — activate scene
   - conditions:
@@ -226,6 +239,8 @@ actions:
         - action: scene.turn_on
           target:
             entity_id: "{{ night_scene_var }}"
+          data:
+            transition: "{{ night_fade_time_var }}"
 
   # Presence lost — run off sequence only if lights are on
   - conditions:
@@ -245,6 +260,8 @@ actions:
         - action: light.turn_off
           target:
             entity_id: !input zone_lights
+          data:
+            transition: "{{ night_fade_time_var }}"
       # Default (06:00-00:00): delay then optional dim then off
       default:
       - delay:
@@ -343,9 +360,13 @@ actions:
             - action: scene.turn_on
               target:
                 entity_id: "{{ night_scene_var }}"
+              data:
+                transition: "{{ night_fade_time_var }}"
           default:
           - action: light.turn_off
             target:
               entity_id: !input zone_lights
+            data:
+              transition: "{{ night_fade_time_var }}"
 
 mode: restart
