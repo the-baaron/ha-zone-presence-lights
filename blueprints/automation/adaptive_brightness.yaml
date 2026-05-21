@@ -1,0 +1,130 @@
+blueprint:
+  name: Adaptive Brightness
+  description: >-
+    Applies a scene based on the time of day when lights turn on.
+    Four optional time windows: morning, afternoon, evening, night.
+    Any window without a scene configured is skipped — the lights
+    turn on but their current state is left unchanged.
+  domain: automation
+  input:
+    section_lights:
+      name: Lights
+      input:
+        zone_lights:
+          name: Lights
+          description: Lights that trigger the scene when turned on.
+          selector:
+            entity:
+              domain: light
+              multiple: true
+
+    section_scenes:
+      name: Scenes
+      input:
+        morning_scene:
+          name: Morning scene
+          description: Applied from morning_start until afternoon_start.
+          default: ""
+          selector:
+            entity:
+              domain: scene
+
+        afternoon_scene:
+          name: Afternoon scene
+          description: Applied from afternoon_start until evening_start.
+          default: ""
+          selector:
+            entity:
+              domain: scene
+
+        evening_scene:
+          name: Evening scene
+          description: Applied from evening_start until night_start.
+          default: ""
+          selector:
+            entity:
+              domain: scene
+
+        night_scene:
+          name: Night scene
+          description: Applied from night_start until morning_start.
+          default: ""
+          selector:
+            entity:
+              domain: scene
+
+    section_schedule:
+      name: Schedule
+      collapsed: true
+      input:
+        morning_start:
+          name: Morning starts
+          default: '06:00:00'
+          selector:
+            time:
+
+        afternoon_start:
+          name: Afternoon starts
+          default: '12:00:00'
+          selector:
+            time:
+
+        evening_start:
+          name: Evening starts
+          default: '17:00:00'
+          selector:
+            time:
+
+        night_start:
+          name: Night starts
+          default: '22:00:00'
+          selector:
+            time:
+
+        fade_time:
+          name: Fade time (seconds)
+          default: 30
+          selector:
+            number:
+              min: 0
+              max: 120
+              unit_of_measurement: s
+
+variables:
+  morning_scene_var: !input morning_scene
+  afternoon_scene_var: !input afternoon_scene
+  evening_scene_var: !input evening_scene
+  night_scene_var: !input night_scene
+  morning_start_var: !input morning_start
+  afternoon_start_var: !input afternoon_start
+  evening_start_var: !input evening_start
+  night_start_var: !input night_start
+  current_scene: >-
+    {% set t = now().strftime('%H:%M:%S') %}
+    {% if t >= morning_start_var and t < afternoon_start_var %}
+      {{ morning_scene_var }}
+    {% elif t >= afternoon_start_var and t < evening_start_var %}
+      {{ afternoon_scene_var }}
+    {% elif t >= evening_start_var and t < night_start_var %}
+      {{ evening_scene_var }}
+    {% else %}
+      {{ night_scene_var }}
+    {% endif %}
+
+triggers:
+- trigger: state
+  entity_id: !input zone_lights
+  to: 'on'
+
+conditions: []
+
+actions:
+- condition: template
+  value_template: "{{ current_scene is string and current_scene | trim != '' }}"
+- action: scene.turn_on
+  target:
+    entity_id: "{{ current_scene | trim }}"
+  data:
+    transition: !input fade_time
+
+mode: restart

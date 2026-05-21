@@ -1,0 +1,73 @@
+blueprint:
+  name: Door Light
+  description: Turns lights on when a door or contact sensor opens, off when it closes.
+  domain: automation
+  input:
+    section_zone:
+      name: Zone
+      input:
+        contact_sensor:
+          name: Contact sensor
+          selector:
+            entity:
+              domain: binary_sensor
+              device_class:
+                - door
+                - window
+                - opening
+
+        zone_lights:
+          name: Lights
+          selector:
+            entity:
+              domain: light
+              multiple: true
+
+    section_timing:
+      name: Timing
+      collapsed: true
+      input:
+        fade_time:
+          name: Fade time (seconds)
+          description: Transition duration for on and off.
+          default: 0
+          selector:
+            number:
+              min: 0
+              max: 60
+              unit_of_measurement: s
+
+triggers:
+- trigger: state
+  entity_id: !input contact_sensor
+  to: 'on'
+  id: opened
+- trigger: state
+  entity_id: !input contact_sensor
+  to: 'off'
+  id: closed
+
+conditions: []
+
+actions:
+- choose:
+  - conditions:
+    - condition: trigger
+      id: opened
+    sequence:
+    - action: light.turn_on
+      target:
+        entity_id: !input zone_lights
+      data:
+        transition: !input fade_time
+  - conditions:
+    - condition: trigger
+      id: closed
+    sequence:
+    - action: light.turn_off
+      target:
+        entity_id: !input zone_lights
+      data:
+        transition: !input fade_time
+
+mode: restart

@@ -1,0 +1,59 @@
+blueprint:
+  name: Low Battery Alert
+  description: >-
+    Sends a notification when a device battery drops below a threshold.
+    Create one automation per device, or use a single automation with
+    a group sensor that tracks the lowest battery level across devices.
+  domain: automation
+  input:
+    section_sensor:
+      name: Sensor
+      input:
+        battery_sensor:
+          name: Battery sensor
+          selector:
+            entity:
+              domain: sensor
+              device_class: battery
+
+        threshold:
+          name: Alert threshold (%)
+          description: Send a notification when battery drops below this level.
+          default: 20
+          selector:
+            number:
+              min: 5
+              max: 50
+              unit_of_measurement: '%'
+
+    section_notification:
+      name: Notification
+      input:
+        notify_service:
+          name: Notification service
+          description: "e.g. notify.mobile_app_your_phone"
+          selector:
+            text:
+
+        message_title:
+          name: Message title
+          default: Low battery
+          selector:
+            text:
+
+triggers:
+- trigger: numeric_state
+  entity_id: !input battery_sensor
+  below: !input threshold
+
+conditions: []
+
+actions:
+- action: !input notify_service
+  data:
+    title: !input message_title
+    message: >-
+      {{ state_attr(trigger.entity_id, 'friendly_name') or trigger.entity_id }}
+      is at {{ trigger.to_state.state }}%
+
+mode: single

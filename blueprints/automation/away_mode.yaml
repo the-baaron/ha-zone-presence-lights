@@ -1,0 +1,99 @@
+blueprint:
+  name: Away Mode
+  description: >-
+    Runs an action when all presence sensors have been off for a set duration.
+    Resets automatically when any sensor detects presence again.
+  domain: automation
+  input:
+    section_presence:
+      name: Presence
+      input:
+        presence_sensors:
+          name: Presence sensors
+          description: All sensors must be off for the away delay before triggering.
+          selector:
+            entity:
+              domain: binary_sensor
+              multiple: true
+
+        away_delay:
+          name: Away delay (minutes)
+          description: How long all sensors must be off before triggering the away action.
+          default: 5
+          selector:
+            number:
+              min: 1
+              max: 120
+              unit_of_measurement: min
+
+    section_actions:
+      name: Actions
+      input:
+        away_scene:
+          name: Away scene (optional)
+          description: Scene to activate when away. Use this for simple light/device off setups.
+          default: ""
+          selector:
+            entity:
+              domain: scene
+
+        home_scene:
+          name: Home scene (optional)
+          description: Scene to activate when someone returns.
+          default: ""
+          selector:
+            entity:
+              domain: scene
+
+variables:
+  presence_sensors_var: !input presence_sensors
+  away_scene_var: !input away_scene
+  home_scene_var: !input home_scene
+
+triggers:
+- trigger: state
+  entity_id: !input presence_sensors
+  to: 'off'
+  for:
+    minutes: !input away_delay
+  id: away
+- trigger: state
+  entity_id: !input presence_sensors
+  to: 'on'
+  id: home
+
+conditions: []
+
+actions:
+- choose:
+  # Away — only trigger if ALL sensors are off
+  - conditions:
+    - condition: trigger
+      id: away
+    - condition: template
+      value_template: >-
+        {{ expand(presence_sensors_var) | selectattr('state', 'eq', 'on') | list | count == 0 }}
+    sequence:
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: "{{ away_scene_var is string and away_scene_var != '' }}"
+        sequence:
+        - action: scene.turn_on
+          target:
+            entity_id: "{{ away_scene_var }}"
+  # Home
+  - conditions:
+    - condition: trigger
+      id: home
+    sequence:
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: "{{ home_scene_var is string and home_scene_var != '' }}"
+        sequence:
+        - action: scene.turn_on
+          target:
+            entity_id: "{{ home_scene_var }}"
+
+mode: restart
