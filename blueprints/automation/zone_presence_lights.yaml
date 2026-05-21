@@ -310,17 +310,42 @@ actions:
       data:
         transition: !input fade_time
 
-  # Midnight and noon — reset override to Auto
+  # Midnight and noon — reset override; midnight also hands off to night mode
   - conditions:
     - condition: trigger
       id: reset
-    - condition: template
-      value_template: "{{ override_var != {} }}"
     sequence:
-    - action: input_select.select_option
-      target:
-        entity_id: "{{ override_var }}"
-      data:
-        option: Auto
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: "{{ override_var != {} }}"
+        sequence:
+        - action: input_select.select_option
+          target:
+            entity_id: "{{ override_var }}"
+          data:
+            option: Auto
+    # At midnight: if lights are on, transition to night mode or turn off
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: "{{ now().hour == 0 and expand(zone_lights_var) | selectattr('state', 'eq', 'on') | list | count > 0 }}"
+        sequence:
+        - choose:
+          # Presence active → activate night scene (or off if no night scene)
+          - conditions:
+            - condition: state
+              entity_id: !input presence_sensor
+              state: 'on'
+            - condition: template
+              value_template: "{{ night_scene_var != {} }}"
+            sequence:
+            - action: scene.turn_on
+              target:
+                entity_id: "{{ night_scene_var }}"
+          default:
+          - action: light.turn_off
+            target:
+              entity_id: !input zone_lights
 
 mode: restart
