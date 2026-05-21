@@ -61,7 +61,6 @@ blueprint:
         night_scene:
           name: Night scene
           description: Activated when dark (00:00–06:00). Leave empty to keep lights off at night.
-          default: {}
           selector:
             entity:
               domain: scene
@@ -71,7 +70,6 @@ blueprint:
           description: >-
             Optional. Activated after the off-delay expires — dims the lights
             before turning them off fully. Only applies during 06:00–00:00.
-          default: {}
           selector:
             entity:
               domain: scene
@@ -119,7 +117,6 @@ blueprint:
             Optional. An input_select helper with options: Auto, Forced on, Forced off.
             Set automatically when you manually control the lights.
             Resets to Auto at 00:00 and 12:00.
-          default: {}
           selector:
             entity:
               domain: input_select
