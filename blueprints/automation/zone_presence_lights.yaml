@@ -61,6 +61,7 @@ blueprint:
         night_scene:
           name: Night scene
           description: Activated when dark (00:00–06:00). Leave empty to keep lights off at night.
+          default: ""
           selector:
             entity:
               domain: scene
@@ -70,6 +71,7 @@ blueprint:
           description: >-
             Optional. Activated after the off-delay expires — dims the lights
             before turning them off fully. Only applies during 06:00–00:00.
+          default: ""
           selector:
             entity:
               domain: scene
@@ -117,6 +119,7 @@ blueprint:
             Optional. An input_select helper with options: Auto, Forced on, Forced off.
             Set automatically when you manually control the lights.
             Resets to Auto at 00:00 and 12:00.
+          default: ""
           selector:
             entity:
               domain: input_select
@@ -176,7 +179,7 @@ actions:
         {{ expand(zone_lights_var) | selectattr('state', 'eq', 'on') | list | count > 0
            or states(illuminance_sensor_var) | int(0) <= illuminance_threshold_var | int }}
     - condition: template
-      value_template: "{{ override_var is not string or is_state(override_var, 'Auto') }}"
+      value_template: "{{ not (override_var is string and override_var != '' and override_var != '') or is_state(override_var, 'Auto') }}"
     sequence:
     - choose:
       - conditions:
@@ -190,7 +193,7 @@ actions:
             transition: !input fade_time
       - conditions:
         - condition: template
-          value_template: "{{ now().hour < 6 and night_scene_var is string }}"
+          value_template: "{{ now().hour < 6 and night_scene_var is string and night_scene_var != '' }}"
         sequence:
         - action: scene.turn_on
           target:
@@ -204,7 +207,7 @@ actions:
       entity_id: !input presence_sensor
       state: 'on'
     - condition: template
-      value_template: "{{ override_var is not string or is_state(override_var, 'Auto') }}"
+      value_template: "{{ not (override_var is string and override_var != '' and override_var != '') or is_state(override_var, 'Auto') }}"
     sequence:
     - choose:
       - conditions:
@@ -218,7 +221,7 @@ actions:
             transition: !input fade_time
       - conditions:
         - condition: template
-          value_template: "{{ now().hour < 6 and night_scene_var is string }}"
+          value_template: "{{ now().hour < 6 and night_scene_var is string and night_scene_var != '' }}"
         sequence:
         - action: scene.turn_on
           target:
@@ -231,7 +234,7 @@ actions:
     - condition: template
       value_template: "{{ expand(zone_lights_var) | selectattr('state', 'eq', 'on') | list | count > 0 }}"
     - condition: template
-      value_template: "{{ override_var is not string or is_state(override_var, 'Auto') }}"
+      value_template: "{{ not (override_var is string and override_var != '' and override_var != '') or is_state(override_var, 'Auto') }}"
     sequence:
     - choose:
       # Night (00:00-06:00): immediate off
@@ -249,7 +252,7 @@ actions:
       - choose:
         - conditions:
           - condition: template
-            value_template: "{{ dim_scene_var is string }}"
+            value_template: "{{ dim_scene_var is string and dim_scene_var != '' }}"
           sequence:
           - action: scene.turn_on
             target:
@@ -269,7 +272,7 @@ actions:
     - condition: trigger
       id: light_off
     - condition: template
-      value_template: "{{ override_var is string }}"
+      value_template: "{{ override_var is string and override_var != '' }}"
     - condition: template
       value_template: "{{ trigger.to_state.context.user_id is not none }}"
     sequence:
@@ -284,7 +287,7 @@ actions:
     - condition: trigger
       id: light_on
     - condition: template
-      value_template: "{{ override_var is string }}"
+      value_template: "{{ override_var is string and override_var != '' }}"
     - condition: template
       value_template: "{{ trigger.to_state.context.user_id is not none }}"
     sequence:
@@ -299,7 +302,7 @@ actions:
     - condition: trigger
       id: became_bright
     - condition: template
-      value_template: "{{ override_var is not string or is_state(override_var, 'Auto') }}"
+      value_template: "{{ not (override_var is string and override_var != '' and override_var != '') or is_state(override_var, 'Auto') }}"
     sequence:
     - action: light.turn_off
       target:
@@ -315,7 +318,7 @@ actions:
     - choose:
       - conditions:
         - condition: template
-          value_template: "{{ override_var is string }}"
+          value_template: "{{ override_var is string and override_var != '' }}"
         sequence:
         - action: input_select.select_option
           target:
@@ -335,7 +338,7 @@ actions:
               entity_id: !input presence_sensor
               state: 'on'
             - condition: template
-              value_template: "{{ night_scene_var is string }}"
+              value_template: "{{ night_scene_var is string and night_scene_var != '' }}"
             sequence:
             - action: scene.turn_on
               target:
